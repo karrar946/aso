@@ -1,6 +1,5 @@
 import telebot
-from telebot import types
-import smtplib
+from telebot.types import InlineKeyboardMarkupimport smtplib
 from email.mime.text import MIMEText
 import ssl
 import time
