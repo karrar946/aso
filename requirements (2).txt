@@ -1,5 +1,4 @@
-APScheduler==3.6.3
-telebot 
+APScheduler==3.6.3 
 Telethon==1.28.0
 cachetools==4.2.2
 certifi==2022.6.15
@@ -13,7 +12,7 @@ itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.1
 pipreqs==0.4.11
-python-telegram-bot==13.13
+pyTelegramBotAPI==4.6.0
 pytz==2022.1
 pytz-deprecation-shim==0.1.0.post0
 requests==2.28.1
