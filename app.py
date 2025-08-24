@@ -76,7 +76,8 @@ def reset_user_state(chat_id, language_code=None):
         "is_waiting_for_body": False,
         "current_email_to_add": None,
         "edit_index": None,
-        "edit_receiver_index": None
+        "edit_receiver_index": None,
+        "receiver_menu_message_id": None
     })
     save_data(user_data)
 def get_accounts(chat_id):
@@ -165,7 +166,9 @@ def show_receiver_emails_menu(chat_id, message_id=None):
         button_text = f"{status_icon} {data['email']} - {data['description']}"
         markup.add(types.InlineKeyboardButton(button_text, callback_data=f'toggle_receiver_{i}'))
     markup.add(types.InlineKeyboardButton("رجوع", callback_data='finish_adding'))
-    bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=markup)
+    sent_msg = bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=markup)
+    user_data[str(chat_id)]["receiver_menu_message_id"] = sent_msg.message_id
+    save_data(user_data)
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     chat_id = call.message.chat.id
@@ -210,7 +213,16 @@ def callback_query(call):
                 button_text = f"{status_icon} {data['email']} - {data['description']}"
                 new_markup.add(types.InlineKeyboardButton(button_text, callback_data=f'toggle_receiver_{i}'))
             new_markup.add(types.InlineKeyboardButton("رجوع  ", callback_data='finish_adding'))
-            bot.send_message(chat_id, "اختر بريد شركة التليجرام المستهدف", reply_markup=new_markup)
+            receiver_menu_id = user_data[str(chat_id)].get("receiver_menu_message_id")
+            if receiver_menu_id:
+                bot.edit_message_text(
+                    text="اختر بريد شركة التليجرام المستهدف",
+                    chat_id=chat_id,
+                    message_id=receiver_menu_id,
+                    reply_markup=new_markup
+                )
+            else:
+                show_receiver_emails_menu(chat_id)
         elif call.data == 'add_new_account':
             bot.clear_step_handler_by_chat_id(chat_id)  # إزالة أي معالجات سابقة
             if "current_email_to_add" in user_data[str(chat_id)]:
