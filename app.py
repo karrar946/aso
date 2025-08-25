@@ -13,7 +13,7 @@ import itertools
 BOT_TOKEN = "8083436685:AAHO7SzPu--ImuSl8BtL2jplLzooJ2V6uxA"
 DATA_FILE = "user_data.json"
 DEVELOPER_CHAT_ID = 1800163946  
-CHANNEL_USERNAME = "Q5_H5"
+CHANNEL_USERNAME = "MMJ8M"
 bot = telebot.TeleBot(BOT_TOKEN)
 # قائمة البريد الإلكتروني للتليجرام
 TELEGRAM_EMAILS = [
@@ -110,7 +110,7 @@ def start_bot(message):
     if not is_user_subscribed(chat_id):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("الاشتراك في القناة", url=f"https://t.me/{CHANNEL_USERNAME}"))
-        bot.send_message(chat_id, "يجب عليك الاشتراك في قناة كنتاكي أولاً لاستخدامه.", reply_markup=markup)
+        bot.send_message(chat_id, "يجب عليك الاشتراك في قناة البوت أولاً لاستخدامه.", reply_markup=markup)
         return
     if is_sending_reports.get(chat_id, False):
         is_sending_reports[chat_id] = False
