@@ -1,40 +1,20 @@
 import telebot
-from telebot import types
-import smtplib
-from email.mime.text import MIMEText
-import ssl
-import time
-import json
-import os
-import random
-import string
-import itertools
-# معلومات البوت
-BOT_TOKEN = "8083436685:AAHO7SzPu--ImuSl8BtL2jplLzooJ2V6uxA"
-DATA_FILE = "user_data.json"
-DEVELOPER_CHAT_ID = 1800163946  
-CHANNEL_USERNAME = "MMJ8M"
-bot = telebot.TeleBot(BOT_TOKEN)
-# قائمة البريد الإلكتروني للتليجرام
-TELEGRAM_EMAILS = [
-    {"email": "abuse@telegram.org", "description": "لجميع المخالفات العامة"},
-    {"email": "security@telegram.org", "description": "للبلاغ عن ثغرات"},
-    {"email": "stopca@telegram.org", "description": "اساءة اطفال"},
-    {"email": "dmca@telegram.org", "description": "حقوق نشر"},
-    {"email": "recover@telegram.org", "description": "لفك حضر الحسابات"},
-    {"email": "Support@telegram.org", "description": "الدعم الفني العام"},
-    {"email": "abuse_team@telegram.org", "description": "لجميع انواع الانتهاكات"},
-    {"email": "reports@stel.com", "description": "مشاكل تسجيل الدخول"},
-    {"email": "sms@telegram.org", "description": "عدم وصول رسائل SMS"},
-    {"email": "dema@telegram.org", "description": "للمطورين (غير مهم)"},
-]
-user_data = {}
-is_sending_reports = {}
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            try:
-                return json.load(f)
+
+# ضع التوكن هنا
+TOKEN = "8083436685:AAHO7SzPu--ImuSl8BtL2jplLzooJ2V6uxA"
+
+# ضع ال ID الخاص بك هنا إذا تحتاجه
+ADMIN_ID = 1800163946  
+
+bot = telebot.TeleBot(TOKEN)
+
+# دالة ترد على أي رسالة أو أمر
+@bot.message_handler(func=lambda message: True)
+def maintenance_mode(message):
+    bot.reply_to(message, "🚧 البوت تحت الصيانة حالياً 🚧")
+
+print("البوت يعمل... (لكن كل شيء يرد بصيانة)")
+bot.infinity_polling()                return json.load(f)
             except json.JSONDecodeError:
                 return {}
     return {}
