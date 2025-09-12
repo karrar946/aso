@@ -27,35 +27,6 @@ TELEGRAM_EMAILS = [
     {"email": "reports@stel.com", "description": "مشاكل تسجيل الدخول"},
     {"email": "sms@telegram.org", "description": "عدم وصول رسائل SMS"},
     {"email": "dema@telegram.org", "description": "للمطورين (غير مهم)"},
-    {"email": "ceo@telegram.org", "description": "الرئيس التنفيذي"},
-    {"email": "pavel@telegram.org", "description": "المؤسس والرئيس التنفيذي"},
-    {"email": "durov@telegram.org", "description": "المؤسس والرئيس التنفيذي"},
-    {"email": "corp@telegram.org", "description": "الشؤون المؤسسية"},
-    {"email": "ir@telegram.org", "description": "علاقات المستثمرين"},
-    {"email": "api_support@telegram.org", "description": "دعم فني API"},
-    {"email": "qa@telegram.org", "description": "ضمان الجودة"},
-    {"email": "http@telegram.org", "description": "خدمات الويب"},
-    {"email": "levlam@telegram.org", "description": "مطور رئيسي"},
-    {"email": "perekopsky@telegram.org", "description": "مطور رئيسي"},
-    {"email": "shyam@telegram.org", "description": "مطور/مهندس"},
-    {"email": "vadim@telegram.org", "description": "مطور/مهندس"},
-    {"email": "alex@telegram.org", "description": "مطور/مهندس"},
-    {"email": "hyman@telegram.org", "description": "مطور/مهندس"},
-    {"email": "marta@telegram.org", "description": "مطور/مهندس"},
-    {"email": "Elies@telegram.org", "description": "مطور/مهندس"},
-    {"email": "125support@telegram.org", "description": "الدعم الفني"},
-    {"email": "u003esupport@telegram.org", "description": "الدعم المتخصص"},
-    {"email": "ask@telegram.org", "description": "المساعدة العامة"},
-    {"email": "enquiries@telegram.org", "description": "الاستفسارات العامة"},
-    {"email": "info@telegram.org", "description": "المعلومات العامة"},
-    {"email": "upit@telegram.org", "description": "الاستفسارات"},
-    {"email": "Marketing@telegram.org", "description": "التسويق"},
-    {"email": "spam@telegram.org", "description": "مكافحة الرسائل المزعجة"},
-    {"email": "Stickers@telegram.org", "description": "فريق الملصقات"},
-    {"email": "mr@telegram.org", "description": "العلاقات الإعلامية"},
-    {"email": "ca@telegram.org", "description": "الشؤون المؤسسية"},
-    {"email": "germany@telegram.org", "description": "عمليات ألمانيا"},
-    {"email": "me@telegram.org", "description": "المنطقة الشرق أوسطية"},
 ]
 user_data = {}
 is_sending_reports = {}
@@ -558,7 +529,7 @@ def start_sending_reports(message):
         f"🚀 بدء البلاغ {total_emails_to_send} بلاغ...\n"
         f"{get_progress_bar(0)}\n"
         f"📤 تم البلاغ: 0/{total_emails_to_send}\n"
-        f"⚡ السرعة: 0.0 بلاغ/ثانية\n"
+        f"⚡️ السرعة: 0.0 بلاغ/ثانية\n"
         f"⏳ الوقت المتبقي: جارٍ التقدير...\n"
         f"🛑 يمكنك إيقاف العملية في أي وقت باستخدام الأمر /ايقاف"
     )
@@ -602,7 +573,7 @@ def start_sending_reports(message):
                 text = f"🚀 جاري إرسال البلاغات...\n" \
                        f"{get_progress_bar(percentage)}\n" \
                        f"📤 تم الإرسال: {sent_count}/{total_emails_to_send}\n" \
-                       f"⚡ السرعة: {rate:.1f} بلاغ/ثانية\n" \
+                       f"⚡️ السرعة: {rate:.1f} بلاغ/ثانية\n" \
                        f"⏳ الوقت المتبقي: {time_remaining_str}\n" \
                        f"🛑 يمكنك إيقاف العملية في أي وقت باستخدام الأمر /ايقاف"
                 bot.edit_message_text(text=text, chat_id=chat_id, message_id=progress_message_id)
@@ -640,13 +611,13 @@ def show_main_menu(chat_id, message_id=None):
     reply_markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     reply_markup.add(types.KeyboardButton("/start"), types.KeyboardButton("/ايقاف"))
     welcome_message = (
-        "*♦ أهلاً بك في بوت شد بلاغات التليجرام التلقائي\\.*\n"
+        "*♦️ أهلاً بك في بوت شد بلاغات التليجرام التلقائي\\.*\n"
         "\\ ▪️طريقة عمل البوت اتبع الخطوات بالترتيب: \n"
         "\\ \\(1\\) ضيف حساب Gmail \n"
         "\\ \\(2\\) حدد حسابات شركة التليجرام حسب نوع بلاغك\n"
         "\\ \\(3\\) إضافة كود وموضوع البلاغ\n"
         "\\ \\(4\\) حدد عدد البلاغات\n"
-        "♦ مطور البوت: [ڪَِنتِـآإڪَِيٰ](tg://openmessage?user_id=1800163946)"
+        "♦️ مطور البوت: [ڪَِنتِـآإڪَِيٰ](tg://openmessage?user_id=1800163946)"
     )
     sent_message = bot.send_message(
         chat_id, 
