@@ -1,7 +1,7 @@
 import telebot
 
 # ضع التوكن هنا
-TOKEN = "8083436685:AAHO7SzPu--ImuSl8BtL2jplLzooJ2V6uxA"
+TOKEN = ""
 
 # ضع ال ID الخاص بك هنا إذا تحتاجه
 ADMIN_ID = 1800163946  
